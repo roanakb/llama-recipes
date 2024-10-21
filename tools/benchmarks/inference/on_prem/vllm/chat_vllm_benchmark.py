@@ -195,8 +195,8 @@ print("| Number of Concurrent Requests | P50 Latency (ms) | P99 Latency (ms) | R
 print("|-------------------------------|------------------|------------------|------------------|-------------------|---------------------------|---------------------|------------------------|-------------------------------------- | ---------------------------------- |")
 
 # Save to file
-csv_file = f"~/performance_metrics_inputlen_{args.inputlen}.csv"
-with open(csv_file, "w", newline='') as f:
+csv_file = f"performance_metrics_inputlen_{args.inputlen}.csv"
+with open(csv_file, "w+", newline='') as f:
     writer = csv.writer(f)
     writer.writerow(["Number of Concurrent Requests", "P50 Latency (ms)", "P99 Latency (ms)", "RPS", "Output Tokens per Second", "Output Tokens per Second per GPU", "Input Tokens per Second", "Input Tokens per Second per GPU", "Average Output Tokens per Second per Request"])
 
