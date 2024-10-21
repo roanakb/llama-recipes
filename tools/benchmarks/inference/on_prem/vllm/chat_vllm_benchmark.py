@@ -18,15 +18,19 @@ from azure.ai.contentsafety.models import AnalyzeTextOptions
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Tuple, List
+import argparse
 
-
+parser = argparse.ArgumentParser()
+parser.add_argument("--inputlen", type=str, choices=["5", "25", "50", "100", "500", "1k", "2k"])
+parser.add_argument("--model", type=str)
+args = parser.parse_args()
 
 with open('input.jsonl') as input:
     prompt_data = json.load(input)
 
+PROMPT = prompt_data[args.inputlen]
 # Prompt data stored in json file. Choose from number of tokens - 5, 25, 50, 100, 500, 1k, 2k.
 # You can also configure and add your own prompt in input.jsonl
-PROMPT = prompt_data["1k"] 
 
 with open('parameters.json') as parameters:
     params = json.load(parameters)
@@ -34,7 +38,7 @@ with open('parameters.json') as parameters:
 MAX_NEW_TOKENS = params["MAX_NEW_TOKENS"]
 CONCURRENT_LEVELS = params["CONCURRENT_LEVELS"]
 # Replace with your own deployment
-MODEL_PATH = params["MODEL_PATH"]
+MODEL_PATH = args.model
 MODEL_HEADERS = params["MODEL_HEADERS"]
 SAFE_CHECK = params["SAFE_CHECK"]
 # Threshold for tokens per second below which we deem the query to be slow
@@ -191,7 +195,7 @@ print("| Number of Concurrent Requests | P50 Latency (ms) | P99 Latency (ms) | R
 print("|-------------------------------|------------------|------------------|------------------|-------------------|---------------------------|---------------------|------------------------|-------------------------------------- | ---------------------------------- |")
 
 # Save to file
-csv_file = "performance_metrics.csv"
+csv_file = f"~/performance_metrics_inputlen_{args.inputlen}.csv"
 with open(csv_file, "w", newline='') as f:
     writer = csv.writer(f)
     writer.writerow(["Number of Concurrent Requests", "P50 Latency (ms)", "P99 Latency (ms)", "RPS", "Output Tokens per Second", "Output Tokens per Second per GPU", "Input Tokens per Second", "Input Tokens per Second per GPU", "Average Output Tokens per Second per Request"])
