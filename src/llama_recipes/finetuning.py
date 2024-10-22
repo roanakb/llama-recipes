@@ -416,9 +416,9 @@ def main(**kwargs):
             for k,v in results.items():
                 wandb_run.summary[k] = v
     num_params = sum([np.prod(p.size()) for p in model.parameters()])
-    mfus = estimate_mfu(train_config.model_name, num_params, len(train_dataloader), end - start, 'H100')
+    mfus = estimate_mfu(train_config.model_name, num_params, 1, results["avg_epoch_time"] / len(train_dataloader), 'H100')
     print(f'est mfu: {mfus}')
-    print(f'train time in sec: {end - start}')
+    print(f'e2e train time in sec: {end - start}')
 
 # from karpathy mingpt
 def estimate_mfu(model_name, num_params, fwdbwd_per_iter, dt, device):
