@@ -416,7 +416,7 @@ def main(**kwargs):
             for k,v in results.items():
                 wandb_run.summary[k] = v
     num_params = sum([np.prod(p.size()) for p in model.parameters()])
-    mfus = estimate_mfu(model.parameters(), num_params, len(train_dataloader), end - start, 'H100')
+    mfus = estimate_mfu(train_config.model_name, num_params, len(train_dataloader), end - start, 'H100')
     print(f'est mfu: {mfus}')
 
 # from karpathy mingpt
