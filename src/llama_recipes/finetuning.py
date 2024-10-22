@@ -452,7 +452,7 @@ def estimate_mfu(model_name, num_params, fwdbwd_per_iter, dt, device):
     # express our flops throughput as ratio of A100 bfloat16 peak flops
     # print('dt', dt, flops_per_iter, flops_per_token, flops_per_fwdbwd)
     flops_achieved = flops_per_iter * (1.0 / dt)  # per second
-    is_h100 = "H100" in torch.cuda.get_device_name(device)
+    is_h100 = "H100" in device
     if is_h100:
         flops_promised = 989e12
     else:
