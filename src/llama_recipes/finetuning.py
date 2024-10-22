@@ -418,6 +418,7 @@ def main(**kwargs):
     num_params = sum([np.prod(p.size()) for p in model.parameters()])
     mfus = estimate_mfu(train_config.model_name, num_params, len(train_dataloader), end - start, 'H100')
     print(f'est mfu: {mfus}')
+    print(f'train time in sec: {end - start}')
 
 # from karpathy mingpt
 def estimate_mfu(model_name, num_params, fwdbwd_per_iter, dt, device):
@@ -425,7 +426,7 @@ def estimate_mfu(model_name, num_params, fwdbwd_per_iter, dt, device):
     # first estimate the number of flops we do per iteration.
     # see PaLM paper Appendix B as ref: https://arxiv.org/abs/2204.02311
     # print('np', num_params, fwdbwd_per_iter, dt)
-    config = None
+    config = {}
     if '8B' in model_name:
         config.n_layer = 32
         config.n_head = 32
