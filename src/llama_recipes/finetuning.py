@@ -11,6 +11,8 @@ import fire
 import numpy as np
 import torch
 import torch.optim as optim
+import time
+
 from accelerate.utils import is_xpu_available
 
 from llama_recipes.configs import (
@@ -388,6 +390,9 @@ def main(**kwargs):
             weight_decay=train_config.weight_decay,
         )
     scheduler = StepLR(optimizer, step_size=1, gamma=train_config.gamma)
+
+    start = time.time()
+
     results = train(
         model,
         train_dataloader,
@@ -402,12 +407,62 @@ def main(**kwargs):
         rank if train_config.enable_fsdp else None,
         wandb_run,
     )
-    if not train_config.enable_fsdp or rank == 0:
-        [print(f"Key: {k}, Value: {v}") for k, v in results.items()]
+
+    end = time.time()
+
+    if not train_config.enable_fsdp or rank==0:
+        [print(f'Key: {k}, Value: {v}') for k, v in results.items()]
         if train_config.use_wandb:
-            for k, v in results.items():
+            for k,v in results.items():
                 wandb_run.summary[k] = v
+    num_params = sum([np.prod(p.size()) for p in model.parameters()])
+    mfus = estimate_mfu(model.parameters(), num_params, len(train_dataloader), end - start, 'H100')
+    print(f'est mfu: {mfus}')
+
+# from karpathy mingpt
+def estimate_mfu(model_name, num_params, fwdbwd_per_iter, dt, device):
+    """estimate model flops utilization (MFU) in units of A100 bfloat16 peak FLOPS"""
+    # first estimate the number of flops we do per iteration.
+    # see PaLM paper Appendix B as ref: https://arxiv.org/abs/2204.02311
+    # print('np', num_params, fwdbwd_per_iter, dt)
+    config = None
+    if '8B' in model_name:
+        config.n_layer = 32
+        config.n_head = 32
+        config.n_embd = 4096
+        config.seq_length = 4096
+    elif '70B' in model_name:
+        config.n_layer = 80
+        config.n_head = 64
+        config.n_embd = 8192
+        config.seq_length = 4096
+    elif '405B' in model_name:
+        config.n_layer = 126
+        config.n_head = 128
+        config.n_embd = 16384
+        config.seq_length = 4096
+
+    N = num_params  # self.get_num_params()
+    cfg = config
+    L, H, Q, T = cfg.n_layer, cfg.n_head, cfg.n_embd // cfg.n_head, cfg.seq_length
+    # print(L, H, Q, T)
+    flops_per_token = 6 * N + 12 * L * H * Q * T
+    flops_per_fwdbwd = flops_per_token * T
+    flops_per_iter = flops_per_fwdbwd * fwdbwd_per_iter
+    # express our flops throughput as ratio of A100 bfloat16 peak flops
+    # print('dt', dt, flops_per_iter, flops_per_token, flops_per_fwdbwd)
+    flops_achieved = flops_per_iter * (1.0 / dt)  # per second
+    is_h100 = "H100" in torch.cuda.get_device_name(device)
+    if is_h100:
+        flops_promised = 989e12
+    else:
+        flops_promised = 312e12  # A100 GPU bfloat16 peak flops is 312 TFLOPS
+    # print('flops_achieved', flops_achieved)
+    mfu = flops_achieved / flops_promised
+    # print(mfu)
+    return mfu
 
 
 if __name__ == "__main__":
     fire.Fire(main)
+
