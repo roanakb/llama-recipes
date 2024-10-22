@@ -428,24 +428,23 @@ def estimate_mfu(model_name, num_params, fwdbwd_per_iter, dt, device):
     # print('np', num_params, fwdbwd_per_iter, dt)
     config = {}
     if '8B' in model_name:
-        config.n_layer = 32
-        config.n_head = 32
-        config.n_embd = 4096
-        config.seq_length = 4096
+        config['n_layer'] = 32
+        config['n_head'] = 32
+        config['n_embd'] = 4096
+        config['seq_length'] = 4096
     elif '70B' in model_name:
-        config.n_layer = 80
-        config.n_head = 64
-        config.n_embd = 8192
-        config.seq_length = 4096
+        config['n_layer'] = 80
+        config['n_head'] = 64
+        config['n_embd'] = 8192
+        config['seq_length'] = 4096
     elif '405B' in model_name:
-        config.n_layer = 126
-        config.n_head = 128
-        config.n_embd = 16384
-        config.seq_length = 4096
+        config['n_layer'] = 126
+        config['n_head'] = 128
+        config['n_embd'] = 16384
+        config['seq_length'] = 4096
 
     N = num_params  # self.get_num_params()
-    cfg = config
-    L, H, Q, T = cfg.n_layer, cfg.n_head, cfg.n_embd // cfg.n_head, cfg.seq_length
+    L, H, Q, T = config['n_layer'], config['n_head'], config['n_embd'] // config['n_head'], config['seq_length']
     # print(L, H, Q, T)
     flops_per_token = 6 * N + 12 * L * H * Q * T
     flops_per_fwdbwd = flops_per_token * T
